@@ -8,7 +8,8 @@ const CONSENSUS_THRESHOLD = 0.5 //more than 50% of nodes have to approve your co
 const port = process.env.PORT || 3000
 const express = require("express")
 const app = express()
-
+const cors = require("cors")
+app.use(cors())
 
 const bodyParser = require('body-parser')
 app.use(bodyParser.json())
