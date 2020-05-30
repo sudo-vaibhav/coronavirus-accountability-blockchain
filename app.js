@@ -1,4 +1,4 @@
-const THIRTY_SECONDS = 30 * 1000 //the consensus algorithm runs every 30 seconds
+const THIRTY_MINUTES = 30 * 60 * 1000 //the consensus algorithm runs every 30 minutes
 const INITIAL_BALANCE = 50 //this is the initial amount that any node starts with
 const STAKE_AMOUNT = 10 //this is the amount that's staked by default to make a proposal
 const REWARD_AMOUNT = 15 //you get 5 more Reputation Tokens that what you staked 
@@ -98,6 +98,7 @@ class Node {
 
 var blockchain = new Blockchain()
 
+
 app.get("/blockchain", (req, res) => {
         res.status(200).send(blockchain)
 })
@@ -145,6 +146,14 @@ app.post("/approve", (req, res) => {
         res.status(200).send("OK")
 })
 
+app.get("/runconsensus",(req,res)=>{
+        blockchain.runConsensus()
+})
+
+app.get("/",(req,res)=>{
+        res.redirect("/blockchain")
+})
+
 app.listen(port, () => {
         console.log(`listening on port ${port}`)
 
@@ -152,5 +161,5 @@ app.listen(port, () => {
                 // maintains the blockchain periodically by rewarding valuable
                 // contributions and penalizing the wrong ones by deducting the staked amount
                 blockchain.runConsensus()
-        }, THIRTY_SECONDS)
+        }, THIRTY_MINUTES)
 })
