@@ -23,9 +23,8 @@ class Block {
         constructor(proposerId, data) {
                 this.proposer = proposerId
                 this.data = data
-                this.approvals = new Set([proposerId]) //obviously a proposer will approve his own block
+                this.approvals = [proposerId] //obviously a proposer will approve his own block
                 this.blockId = uuidv4() //assigns a unique id to each proposal for tracking later
-                console.log(this.approvals)
         }
 
 }
@@ -38,7 +37,6 @@ class Blockchain {
         }
 
         stake(block) {
-                console.log("inside stake method", block)
                 this.nodes[block.proposer].balance -= STAKE_AMOUNT
                 this.proposalBuffer.push(block)
         }
@@ -46,19 +44,18 @@ class Blockchain {
         runConsensus() {
                 console.log("running consensus algorithm now!")
                 this.proposalBuffer.forEach(proposal => {
-                        let approvalsCount = proposal.approvals.size
+                        let approvalsCount = proposal.approvals.length
                         let nodesCount = Object.keys(this.nodes).length
                         let approvalRatio = (approvalsCount / nodesCount)
-                        console.log("approval ratio: ", approvalRatio)
                         if (approvalRatio > CONSENSUS_THRESHOLD) {
                                 this.addBlock(proposal)
                                 //now reward the proposer
                                 console.log("proposal approved!!", proposal)
-                                this.nodes[proposal.proposer] += REWARD_AMOUNT
+                                this.nodes[proposal.proposer].balance += REWARD_AMOUNT
                         } else {
                                 //your block doesn't get added and you get less amounts of token back
-                                console.log("proposal rejected!!",proposal)
-                                this.nodes[proposal.proposer] += PENALIZED_AMOUNT
+                                console.log("proposal rejected!!", proposal)
+                                this.nodes[proposal.proposer].balance += PENALIZED_AMOUNT
                         }
                 })
 
@@ -75,7 +72,7 @@ class Blockchain {
                         return false //means another node with same id already exists
                 } else {
                         this.nodes[node.id] = node // adding a new node and allocating it the initial balance
-                        console.log("new node added", node.id)
+                        return true
                 }
         }
 
@@ -97,7 +94,7 @@ class Node {
         }
 }
 
-var blockchain = new Blockchain()
+let blockchain = new Blockchain()
 
 
 app.get("/blockchain", (req, res) => {
@@ -114,9 +111,8 @@ app.post("/proposeblock", (req, res) => {
                 res.status(200).send({
                         blockId
                 })
-        }
-        catch{
-             res.status(404).send("user not found")   
+        } catch {
+                res.status(404).send("user not found")
         }
 
 })
@@ -129,29 +125,33 @@ app.post("/addNode", (req, res) => {
         res.status(200).send("OK")
 })
 
+
+//for adding a 
 app.post("/approve", (req, res) => {
         const {
                 id,
                 blockId
         } = req.body
-        console.log(req.body)
-        console.log(blockchain.proposalBuffer)
-        for (proposal of blockchain.proposalBuffer) {
+
+        for (let proposal of blockchain.proposalBuffer) {
                 if (proposal.blockId == blockId) {
-                        proposal.approvals.add(id)
-                        break;
+                        console.log(proposal.approvals)
+                        if(!proposal.approvals.includes(id)){
+                                proposal.approvals.push(id)
+                        }
+                        break
                 }
         }
 
-        console.log(blockchain.proposalBuffer)
         res.status(200).send("OK")
 })
 
-app.get("/runconsensus",(req,res)=>{
+app.get("/runconsensus", (req, res) => {
         blockchain.runConsensus()
+        res.status(200).send(blockchain)
 })
 
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
         res.redirect("/blockchain")
 })
 
